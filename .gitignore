@@ -2,7 +2,6 @@
 __pycache__/
 *.py[cod]
 *$py.class
-frames_dataset
 wandb
 .DS_Store
 */.DS_Store
