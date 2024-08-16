@@ -9,9 +9,9 @@ dataset = ConditionalVideoDataset("frames_dataset")
 
 tokenizer = VideoTokenizer(
     image_size=128,
-    init_dim=22,
+    init_dim=28,
     num_res_blocks=1,
-    ch_mult=(1, 2),
+    ch_mult=(2,),
     z_channels=256,
     perceptual_loss_weight=0,
     use_gan=False,
@@ -24,7 +24,8 @@ trainer = VideoTokenizerTrainer(
     use_wandb_tracking=True,  # use True for metric logging MODIFIED
     dataset=dataset,
     dataset_type="videos",  # 'videos' or 'images', prior papers have shown pretraining on images to be effective for video synthesis
-    batch_size=16,
+    checkpoints_folder="./new_checkpoints",
+    batch_size=8,
     grad_accum_every=1,
     learning_rate=3e-4,
     num_train_steps=5000,
@@ -37,5 +38,5 @@ trainer = VideoTokenizerTrainer(
 
 # trainer.load("checkpoints/checkpoint.pt")
 
-with trainer.trackers(project_name="magvit2-video", run_name="wider (size=1M, dim=22)"):
+with trainer.trackers(project_name="magvit2-video", run_name="super_wide (size=1M, dim=28 blocks=1, mult=(2,))"):
     trainer.train()

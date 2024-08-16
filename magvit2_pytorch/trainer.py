@@ -59,7 +59,7 @@ def cycle(dl):
 # class
 
 
-@auto_unwrap_model()
+# @auto_unwrap_model()
 class VideoTokenizerTrainer:
     @beartype
     def __init__(
@@ -108,8 +108,8 @@ class VideoTokenizerTrainer:
 
         self.model = model
 
-        if self.is_main:
-            self.ema_model = EMA(model, include_online_model=False, **ema_kwargs)
+        # if self.is_main:
+        #     self.ema_model = EMA(model, include_online_model=False, **ema_kwargs)
 
         dataset_kwargs.update(channels=model.channels)
 
@@ -226,17 +226,17 @@ class VideoTokenizerTrainer:
 
         self.multiscale_discr_optimizers = []
 
-        for ind, discr in enumerate(self.model.multiscale_discrs):
-            multiscale_optimizer = get_optimizer(
-                discr.parameters(), lr=learning_rate, **optimizer_kwargs
-            )
+        # for ind, discr in enumerate(self.model.multiscale_discrs):
+        #     multiscale_optimizer = get_optimizer(
+        #         discr.parameters(), lr=learning_rate, **optimizer_kwargs
+        #     )
 
-            self.multiscale_discr_optimizers.append(multiscale_optimizer)
+        #     self.multiscale_discr_optimizers.append(multiscale_optimizer)
 
-        if self.has_multiscale_discrs:
-            self.multiscale_discr_optimizers = self.accelerator.prepare(
-                *self.multiscale_discr_optimizers
-            )
+        # if self.has_multiscale_discrs:
+        #     self.multiscale_discr_optimizers = self.accelerator.prepare(
+        #         *self.multiscale_discr_optimizers
+        #     )
 
         # checkpoints and sampled results folder
 
@@ -258,7 +258,7 @@ class VideoTokenizerTrainer:
 
         # move ema to the proper device
 
-        self.ema_model.to(self.device)
+        # self.ema_model.to(self.device)
 
     @contextmanager
     @beartype
@@ -271,13 +271,17 @@ class VideoTokenizerTrainer:
     ):
         assert self.use_wandb_tracking
 
-        if resume:
-            self.accelerator.init_trackers(project_name, config=hps, init_kwargs={"wandb": {"id": resume, "resume": "must"}})
-        else:
-            self.accelerator.init_trackers(project_name, config=hps)
+        config = {"wandb":{}}
 
         if exists(run_name):
-            self.accelerator.trackers[0].run.name = run_name
+            # {"wandb":{"name":"Idea10"}}
+            config["wandb"]["name"] = run_name 
+        
+        if exists(resume):
+            config["wandb"]["id"] = resume
+            config["wandb"]["resume"] = "must"
+
+        self.accelerator.init_trackers(project_name, config=hps, init_kwargs=config)
 
         yield
         self.accelerator.end_training()
@@ -307,12 +311,12 @@ class VideoTokenizerTrainer:
     def print(self, msg):
         return self.accelerator.print(msg)
 
-    @property
-    def ema_tokenizer(self):
-        return self.ema_model.ema_model
+    # @property
+    # def ema_tokenizer(self):
+    #     return self.ema_model.ema_model
 
-    def tokenize(self, *args, **kwargs):
-        return self.ema_tokenizer.tokenize(*args, **kwargs)
+    # def tokenize(self, *args, **kwargs):
+    #     return self.ema_tokenizer.tokenize(*args, **kwargs)
 
     def save(self, path, overwrite=True):
         path = Path(path)
@@ -320,7 +324,7 @@ class VideoTokenizerTrainer:
 
         pkg = dict(
             model=self.model.state_dict(),
-            ema_model=self.ema_model.state_dict(),
+            # ema_model=self.ema_model.state_dict(),
             optimizer=self.optimizer.state_dict(),
             discr_optimizer=self.discr_optimizer.state_dict(),
             warmup=self.warmup.state_dict(),
@@ -342,7 +346,7 @@ class VideoTokenizerTrainer:
         pkg = torch.load(str(path))
 
         self.model.load_state_dict(pkg["model"])
-        self.ema_model.load_state_dict(pkg["ema_model"])
+        # self.ema_model.load_state_dict(pkg["ema_model"])
         self.optimizer.load_state_dict(pkg["optimizer"])
         self.discr_optimizer.load_state_dict(pkg["discr_optimizer"])
         self.warmup.load_state_dict(pkg["warmup"])
@@ -362,9 +366,7 @@ class VideoTokenizerTrainer:
 
         # determine whether to train adversarially
 
-        train_adversarially = (
-            self.model.use_gan and (step + 1) > self.discr_start_after_step
-        )
+        train_adversarially = False
 
         adversarial_loss_weight = 0.0 if not train_adversarially else None
         multiscale_adversarial_loss_weight = 0.0 if not train_adversarially else None
@@ -415,10 +417,10 @@ class VideoTokenizerTrainer:
 
         # update ema model
 
-        self.wait()
+        # self.wait()
 
-        if self.is_main:
-            self.ema_model.update()
+        # if self.is_main:
+        #     self.ema_model.update()
 
         self.wait()
 
@@ -491,7 +493,7 @@ class VideoTokenizerTrainer:
 
     @torch.no_grad()
     def valid_step(self, dl_iter, save_recons=True, num_save_recons=1):
-        self.ema_model.eval()
+        # self.ema_model.eval()
 
         recon_loss = 0.0
         ema_recon_loss = 0.0
@@ -505,50 +507,50 @@ class VideoTokenizerTrainer:
 
             with self.accelerator.autocast():
                 loss, _ = self.unwrapped_model(valid_video, return_recon_loss_only=True)
-                ema_loss, ema_recon_video = self.ema_model(
-                    valid_video, return_recon_loss_only=True
-                )
+                # ema_loss, ema_recon_video = self.ema_model(
+                #     valid_video, return_recon_loss_only=True
+                # )
 
             recon_loss += loss / self.grad_accum_every
-            ema_recon_loss += ema_loss / self.grad_accum_every
+            # ema_recon_loss += ema_loss / self.grad_accum_every
 
             if valid_video.ndim == 4:
                 valid_video = rearrange(valid_video, "b c h w -> b c 1 h w")
 
             valid_videos.append(valid_video.cpu())
-            recon_videos.append(ema_recon_video.cpu())
+            # recon_videos.append(ema_recon_video.cpu())
 
         self.log(
             valid_recon_loss=recon_loss.item(),
-            valid_ema_recon_loss=ema_recon_loss.item(),
+            # valid_ema_recon_loss=ema_recon_loss.item(),
         )
 
-        self.print(f"validation recon loss {recon_loss:.3f}")
-        self.print(f"validation EMA recon loss {ema_recon_loss:.3f}")
+        # self.print(f"validation recon loss {recon_loss:.3f}")
+        # self.print(f"validation EMA recon loss {ema_recon_loss:.3f}")
 
-        if not save_recons:
-            return
+        # if not save_recons:
+        #     return
 
-        valid_videos = torch.cat(valid_videos)
-        recon_videos = torch.cat(recon_videos)
+        # valid_videos = torch.cat(valid_videos)
+        # recon_videos = torch.cat(recon_videos)
 
-        recon_videos.clamp_(min=0.0, max=1.0)
+        # recon_videos.clamp_(min=0.0, max=1.0)
 
-        valid_videos, recon_videos = map(
-            lambda t: t[:num_save_recons], (valid_videos, recon_videos)
-        )
+        # valid_videos, recon_videos = map(
+        #     lambda t: t[:num_save_recons], (valid_videos, recon_videos)
+        # )
 
-        real_and_recon = rearrange(
-            [valid_videos, recon_videos], "n b c f h w -> c f (b h) (n w)"
-        )
+        # real_and_recon = rearrange(
+        #     [valid_videos, recon_videos], "n b c f h w -> c f (b h) (n w)"
+        # )
 
-        validate_step = self.step // self.validate_every_step
+        # validate_step = self.step // self.validate_every_step
 
-        sample_path = str(self.results_folder / f"sampled.{validate_step}.gif")
+        # sample_path = str(self.results_folder / f"sampled.{validate_step}.gif")
 
-        video_tensor_to_gif(real_and_recon, str(sample_path))
+        # video_tensor_to_gif(real_and_recon, str(sample_path))
 
-        self.print(f"sample saved to {str(sample_path)}")
+        # self.print(f"sample saved to {str(sample_path)}")
 
     def train(self):
 
