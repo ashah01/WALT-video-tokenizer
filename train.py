@@ -64,8 +64,13 @@ class LitAutoEncoder(L.LightningModule):
 
             return optim.lr_scheduler.LambdaLR(optimizer, lr_lambda)
 
+        scheduler = {
+            'scheduler': cosine_annealing_with_warmup(optimizer, 500, 5000, 3e-4, 3e-5),
+            'interval': 'step', # or 'epoch'
+            'frequency': 1,
+        }
 
-        return {"optimizer": optimizer, "lr_scheduler": cosine_annealing_with_warmup(optimizer, 500, 5000, 3e-4, 3e-5)}
+        return {"optimizer": optimizer, "lr_scheduler": scheduler}
 
 def main():
     L.seed_everything(42)
