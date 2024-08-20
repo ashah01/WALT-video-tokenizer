@@ -79,7 +79,7 @@ def main():
     dataset = ConditionalVideoDataset("frames_dataset")
 
     # Split data in to train, val, test
-    train_set_size = int(len(dataset) * 0.9)
+    train_set_size = int(len(dataset) * 0.95)
     valid_set_size = len(dataset) - train_set_size
 
     # split the train set into two
@@ -94,7 +94,7 @@ def main():
 
     # Trainer
     checkpoint_callback = ModelCheckpoint(dirpath="checkpoints/", filename="checkpoint", every_n_train_steps=100)
-    logger = WandbLogger(project="mavit2-video", name="super_wide (size=1M, dim=28 blocks=1, mult=(2,))")
+    logger = WandbLogger(project="magvit2-video", name="super_wide (size=1M, dim=28 blocks=1, mult=(2,))")
     trainer = L.Trainer(
         accelerator="gpu",
         devices=4,
