@@ -8,7 +8,7 @@ import lightning as L
 from lightning.pytorch.callbacks import ModelCheckpoint
 from lightning.pytorch.loggers import WandbLogger
 
-from magvit2_pytorch.arnav_modules import Encoder, Decoder
+from model import Encoder, Decoder
 from condition_dataset import ConditionalVideoDataset
 
 
