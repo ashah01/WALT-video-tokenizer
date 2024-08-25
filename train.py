@@ -14,7 +14,7 @@ from condition_dataset import ConditionalVideoDataset
 
 # define the LightningModule
 class LitAutoEncoder(L.LightningModule):
-    def __init__(self, init_dim, num_blocks, ch_mult):
+    def __init__(self, init_dim, num_blocks):
         super().__init__()
         self.encoder = Encoder(
             ch=init_dim,
@@ -22,7 +22,7 @@ class LitAutoEncoder(L.LightningModule):
             num_res_blocks=num_blocks,
             z_channels=256,
             resolution=128,
-            ch_mult=ch_mult
+            ch_mult=(1, 2, 2, 4),
         )
 
         self.decoder = Decoder(
@@ -31,7 +31,7 @@ class LitAutoEncoder(L.LightningModule):
             num_res_blocks=num_blocks,
             ch=init_dim,
             resolution=128,
-            ch_mult=ch_mult
+            ch_mult=(1, 2, 2, 4),
     )
 
     def training_step(self, batch, batch_idx):
@@ -86,18 +86,18 @@ def main():
     seed = torch.Generator().manual_seed(42)
     train_set, valid_set = data.random_split(dataset, [train_set_size, valid_set_size], generator=seed)
 
-    train_loader = DataLoader(train_set, batch_size=8, shuffle=True)
-    valid_loader = DataLoader(valid_set, batch_size=8, shuffle=False)
+    train_loader = DataLoader(train_set, batch_size=16, shuffle=True)
+    valid_loader = DataLoader(valid_set, batch_size=16, shuffle=False)
 
     # Model
-    model = LitAutoEncoder(28, 1, (2,))
+    model = LitAutoEncoder(16, 1)
 
     # Trainer
     checkpoint_callback = ModelCheckpoint(dirpath="checkpoints/", filename="checkpoint", every_n_train_steps=100)
     logger = WandbLogger(project="magvit2-video", name="super_wide (size=1M, dim=28 blocks=1, mult=(2,))")
     trainer = L.Trainer(
         accelerator="gpu",
-        devices=4,
+        devices=8,
         strategy="ddp",
         precision="16-mixed",
         max_steps=5000,
@@ -115,7 +115,7 @@ if __name__ == "__main__":
     main()
 
 # # load checkpoint
-# checkpoint = "./lightning_logs/version_0/checkpoints/epoch=0-step=100.ckpt"
+# checkpoint = "checkpoints/checkpoint.pt"
 # autoencoder = LitAutoEncoder.load_from_checkpoint(checkpoint, encoder=encoder, decoder=decoder)
 
 # # choose your trained nn.Module

@@ -97,7 +97,7 @@ class Encoder(nn.Module):
             block_in = ch * in_ch_mult[i_level]  # [1, 1, 2, 2, 4]
             block_out = ch * ch_mult[i_level]  # [1, 2, 2, 4]
             for _ in range(self.num_res_blocks):
-                block.append(ResBlock(block_in, block_out, ch // ch_mult[-1]))
+                block.append(ResBlock(block_in, block_out, ch // 2))
                 block_in = block_out
 
             down = nn.Module()
@@ -116,10 +116,10 @@ class Encoder(nn.Module):
         ### mid
         self.mid_block = nn.ModuleList()
         for res_idx in range(self.num_res_blocks):
-            self.mid_block.append(ResBlock(block_in, block_in, ch // ch_mult[-1]))
+            self.mid_block.append(ResBlock(block_in, block_in, ch // 2))
 
         ### end
-        self.norm_out = nn.GroupNorm(ch // ch_mult[-1], block_out, eps=1e-6)
+        self.norm_out = nn.GroupNorm(ch // 2, block_out, eps=1e-6)
         self.conv_out = nn.Conv3d(
             block_out, z_channels, kernel_size=(1, 1, 1), padding="same"
         )
@@ -173,7 +173,7 @@ class Decoder(nn.Module):
 
         self.mid_block = nn.ModuleList()
         for res_idx in range(self.num_res_blocks):
-            self.mid_block.append(ResBlock(block_in, block_in, ch // ch_mult[-1]))
+            self.mid_block.append(ResBlock(block_in, block_in, ch // 2))
 
         self.up = nn.ModuleList()
 
@@ -181,7 +181,7 @@ class Decoder(nn.Module):
             block = nn.ModuleList()
             block_out = ch * ch_mult[i_level]
             for i_block in range(self.num_res_blocks):
-                block.append(ResBlock(block_in, block_out, ch // ch_mult[-1]))
+                block.append(ResBlock(block_in, block_out, ch // 2))
                 block_in = block_out
 
             up = nn.Module()
@@ -190,7 +190,7 @@ class Decoder(nn.Module):
                 up.upsample = Upsampler(block_in, self.depths[i_level - 1])
             self.up.insert(0, up)
 
-        self.norm_out = nn.GroupNorm(ch // ch_mult[-1], block_in, eps=1e-6)
+        self.norm_out = nn.GroupNorm(ch // 2, block_in, eps=1e-6)
 
         self.conv_out = nn.Conv3d(
             block_in, out_ch, kernel_size=(3, 3, 3), padding="same"
