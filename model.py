@@ -72,13 +72,10 @@ class Encoder(nn.Module):
         num_res_blocks,
         z_channels,
         ch_mult=(1, 2, 2, 4),
-        resolution,
-        double_z=False,
     ):
         super().__init__()
 
         self.z_channels = z_channels
-        self.resolution = resolution
 
         self.num_res_blocks = num_res_blocks
         self.num_blocks = len(ch_mult)
@@ -155,14 +152,11 @@ class Decoder(nn.Module):
         num_res_blocks,
         z_channels,
         ch_mult=(1, 2, 2, 4),
-        resolution,
-        double_z=False,
     ) -> None:
         super().__init__()
 
         self.num_blocks = len(ch_mult)
         self.num_res_blocks = num_res_blocks
-        self.resolution = resolution
         self.depths = (1, 2, 2)
 
         block_in = ch * ch_mult[self.num_blocks - 1]

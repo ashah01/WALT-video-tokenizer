@@ -21,7 +21,6 @@ class LitAutoEncoder(L.LightningModule):
             in_channels=3,
             num_res_blocks=num_blocks,
             z_channels=256,
-            resolution=128,
             ch_mult=(1, 2, 2, 4),
         )
 
@@ -30,7 +29,6 @@ class LitAutoEncoder(L.LightningModule):
             z_channels=256,
             num_res_blocks=num_blocks,
             ch=init_dim,
-            resolution=128,
             ch_mult=(1, 2, 2, 4),
     )
 
