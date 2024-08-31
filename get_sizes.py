@@ -8,7 +8,6 @@ def get_params(in_dim, blocks, ch_mult):
         in_channels=3,
         num_res_blocks=blocks,
         z_channels=256,
-        resolution=128,
         ch_mult=ch_mult
     )
 
@@ -17,7 +16,6 @@ def get_params(in_dim, blocks, ch_mult):
         z_channels=256,
         num_res_blocks=blocks,
         ch=in_dim,
-        resolution=128,
         ch_mult=ch_mult
     )
 
@@ -25,4 +23,4 @@ def get_params(in_dim, blocks, ch_mult):
     return sum([p.numel() for p in tokenizer.parameters()])
 
 # print(get_params(12, 3, (1, 2, 2, 4)))
-print(get_params(16, 1, (1, 2, 2, 4)))
+print(get_params(14, 4, (1, 2, 2, 4)))
