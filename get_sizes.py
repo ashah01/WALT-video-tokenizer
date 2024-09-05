@@ -22,5 +22,4 @@ def get_params(in_dim, blocks, ch_mult):
     tokenizer = torch.nn.Sequential(encoder, decoder)
     return sum([p.numel() for p in tokenizer.parameters()])
 
-# print(get_params(12, 3, (1, 2, 2, 4)))
-print(get_params(14, 4, (1, 2, 2, 4)))
+print(get_params(30, 1, (1, 2, 2, 4)))
