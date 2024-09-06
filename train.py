@@ -5,7 +5,7 @@ from torch.utils.data import DataLoader
 import torch.utils.data as data
 import torch
 import lightning as L
-from lightning.pytorch.callbacks import ModelCheckpoint
+from lightning.pytorch.callbacks import ModelCheckpoint, EarlyStopping
 from lightning.pytorch.loggers import WandbLogger
 
 from model import Encoder, Decoder
@@ -91,7 +91,17 @@ def main():
     model = LitAutoEncoder(16, 1)
 
     # Trainer
-    checkpoint_callback = ModelCheckpoint(dirpath="checkpoints/", filename="checkpoint", every_n_train_steps=100)
+    checkpoint_callbacks = [
+        ModelCheckpoint(dirpath="checkpoints/", filename="checkpoint", every_n_train_steps=100),
+        EarlyStopping(
+            monitor="valid_recon_loss",
+            min_delta=0.00001,
+            patience=7,  # NOTE no. val epochs, not train epochs
+            verbose=False,
+            mode="min",
+        ),
+    ]
+
     logger = WandbLogger(project="magvit2-video", name="super_wide (size=1M, dim=28 blocks=1, mult=(2,))")
     trainer = L.Trainer(
         accelerator="gpu",
@@ -104,7 +114,7 @@ def main():
         gradient_clip_val=1.0,
         log_every_n_steps=1,
         logger=logger,
-        callbacks=[checkpoint_callback]
+        callbacks=checkpoint_callbacks
     )
     trainer.fit(model=model, train_dataloaders=train_loader, val_dataloaders=valid_loader)
 
