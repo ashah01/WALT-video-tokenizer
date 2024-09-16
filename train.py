@@ -11,6 +11,7 @@ from lightning.pytorch.loggers import WandbLogger
 from model import Encoder, Decoder
 from condition_dataset import ConditionalVideoDataset
 
+# torch.set_float32_matmul_precision('medium')
 
 # define the LightningModule
 class LitAutoEncoder(L.LightningModule):
@@ -30,7 +31,7 @@ class LitAutoEncoder(L.LightningModule):
             num_res_blocks=num_blocks,
             ch=init_dim,
             ch_mult=(1, 2, 2, 4),
-    )
+        )
 
     def training_step(self, batch, batch_idx):
         # training_step defines the train loop.
@@ -39,7 +40,7 @@ class LitAutoEncoder(L.LightningModule):
         z = self.encoder(x)
         x_hat = self.decoder(z)
         loss = F.mse_loss(x_hat, x)
-        # Logging to TensorBoard (if installed) by default
+
         self.log("recon_loss", loss)
         return loss
 
@@ -63,7 +64,7 @@ class LitAutoEncoder(L.LightningModule):
             return optim.lr_scheduler.LambdaLR(optimizer, lr_lambda)
 
         scheduler = {
-            'scheduler': cosine_annealing_with_warmup(optimizer, 500, 5000, 3e-4, 3e-5),
+            'scheduler': cosine_annealing_with_warmup(optimizer, 1000, 10000, 3e-4, 0),
             'interval': 'step', # or 'epoch'
             'frequency': 1,
         }
@@ -71,7 +72,7 @@ class LitAutoEncoder(L.LightningModule):
         return {"optimizer": optimizer, "lr_scheduler": scheduler}
 
 def main():
-    L.seed_everything(42)
+    L.seed_everything(38)
 
     # Data
     dataset = ConditionalVideoDataset("frames_dataset")
@@ -81,18 +82,18 @@ def main():
     valid_set_size = len(dataset) - train_set_size
 
     # split the train set into two
-    seed = torch.Generator().manual_seed(42)
+    seed = torch.Generator().manual_seed(38)
     train_set, valid_set = data.random_split(dataset, [train_set_size, valid_set_size], generator=seed)
 
     train_loader = DataLoader(train_set, batch_size=16, shuffle=True)
     valid_loader = DataLoader(valid_set, batch_size=16, shuffle=False)
 
     # Model
-    model = LitAutoEncoder(16, 1)
+    model = LitAutoEncoder(18, 2)
 
     # Trainer
     checkpoint_callbacks = [
-        ModelCheckpoint(dirpath="checkpoints/", filename="checkpoint", every_n_train_steps=100),
+        ModelCheckpoint(dirpath="checkpoints/", filename="checkpoint", every_n_train_steps=100, monitor="valid_recon_loss"),
         EarlyStopping(
             monitor="valid_recon_loss",
             min_delta=0.00001,
@@ -102,13 +103,13 @@ def main():
         ),
     ]
 
-    logger = WandbLogger(project="magvit2-video", name="super_wide (size=1M, dim=28 blocks=1, mult=(2,))")
+    logger = WandbLogger(project="magvit2-video", name="5M to convergence -- diagnose spike", id="mnu37u4k", resume="must")
     trainer = L.Trainer(
         accelerator="gpu",
         devices=8,
         strategy="ddp",
-        precision="16-mixed",
-        max_steps=5000,
+        # precision="16-mixed",
+        max_steps=10000,
         check_val_every_n_epoch=None,
         val_check_interval=100,
         gradient_clip_val=1.0,
@@ -116,7 +117,7 @@ def main():
         logger=logger,
         callbacks=checkpoint_callbacks
     )
-    trainer.fit(model=model, train_dataloaders=train_loader, val_dataloaders=valid_loader)
+    trainer.fit(model=model, train_dataloaders=train_loader, val_dataloaders=valid_loader, ckpt_path="checkpoints/5m.ckpt")
 
 
 if __name__ == "__main__":
