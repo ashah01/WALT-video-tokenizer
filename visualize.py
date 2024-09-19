@@ -4,18 +4,18 @@ import plotly.graph_objects as go
 
 df = pd.read_csv("./scaling_law.csv")
 
-fig = px.line(x=df['num_params'], y=df['loss'], log_x=True)
+# fig = px.line(x=df['num_params'], y=df['loss'], log_x=True)
 
-# fig = go.Figure()
+fig = go.Figure()
 
-# # categories = df['series'].unique()
+# categories = df['series'].unique()
 
-# # for category in categories:
-# fig.add_trace(go.Scatter(
-#     x=df["num_params"],
-#     y=df['loss'],
-#     mode='lines+markers',  # Line with markers
-# ))
+# for category in categories:
+fig.add_trace(go.Scatter(
+    x=df["num_params"],
+    y=df['loss'],
+    mode='lines+markers',  # Line with markers
+))
 
 fig.update_layout(
 title={
@@ -34,6 +34,6 @@ yaxis=dict(title_font=dict(size=15),
         ),  # Y-axis label font size
 )
 
-# fig.update_xaxes(type="log")
+fig.update_xaxes(type="log")
 # Show the figure
 fig.show()

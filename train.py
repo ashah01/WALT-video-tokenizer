@@ -50,7 +50,7 @@ class LitAutoEncoder(L.LightningModule):
         z = self.encoder(x)
         x_hat = self.decoder(z)
         val_loss = F.mse_loss(x_hat, x)
-        self.log("valid_recon_loss", val_loss)
+        self.log("valid_recon_loss", val_loss, sync_dist=True)
 
     def configure_optimizers(self):
         optimizer = optim.Adam(self.parameters(), lr=3e-4)
@@ -89,21 +89,21 @@ def main():
     valid_loader = DataLoader(valid_set, batch_size=16, shuffle=False)
 
     # Model
-    model = LitAutoEncoder(18, 2)
+    model = LitAutoEncoder(16, 1)
 
     # Trainer
     checkpoint_callbacks = [
-        ModelCheckpoint(dirpath="checkpoints/", filename="checkpoint", every_n_train_steps=100, monitor="valid_recon_loss"),
+        ModelCheckpoint(dirpath="checkpoints/", filename="checkpoint", every_n_train_steps=100),
         EarlyStopping(
             monitor="valid_recon_loss",
             min_delta=0.00001,
             patience=7,  # NOTE no. val epochs, not train epochs
-            verbose=False,
+            verbose=True,
             mode="min",
         ),
     ]
 
-    logger = WandbLogger(project="magvit2-video", name="5M to convergence -- diagnose spike", id="mnu37u4k", resume="must")
+    logger = WandbLogger(project="magvit2-video", name="3M to convergence", id="n8zj78m6", resume="must")
     trainer = L.Trainer(
         accelerator="gpu",
         devices=8,
@@ -117,7 +117,7 @@ def main():
         logger=logger,
         callbacks=checkpoint_callbacks
     )
-    trainer.fit(model=model, train_dataloaders=train_loader, val_dataloaders=valid_loader, ckpt_path="checkpoints/5m.ckpt")
+    trainer.fit(model=model, train_dataloaders=train_loader, val_dataloaders=valid_loader, ckpt_path="checkpoints/3m.ckpt")
 
 
 if __name__ == "__main__":
